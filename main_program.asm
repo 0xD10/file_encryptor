@@ -1,5 +1,5 @@
 section .data
-  filename db "newfile.txt", 0;
+  filename db "newfile.enc", 0;
 
 section .text
   global main;
@@ -24,13 +24,13 @@ write_new_output_file:
   mov rax, 2;
   lea rdi, [filename];
   mov rsi, 64 | 2;
-  mov rdx, 644;
+  mov rdx, 0o664;
   syscall;
 
   mov dword [rbp-984], eax;
 
   mov rax, 1;
-  mov rsi, [rbp-512];
+  lea rsi, [rbp-512];
   mov rdx, [rbp-520];
   mov rdi, [rbp-984];
   syscall;
@@ -42,6 +42,8 @@ write_new_output_file:
   mov rax, 3;
   mov edi, dword [rbp-992];
   syscall;
+
+  ret;
 
 encrypt_file:
   xor rax, rax;

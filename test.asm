@@ -7,9 +7,9 @@ main:
   mov rbp, rsp;
   sub rsp, 1056;
   
-  call read_input_file;
-  call open_file;
-  call generate_random_numbers;
+  call read_user_file_input;
+  call open_user_file_input;
+  call generate_pseudorandom_numbers;
   call encrypt_file;
 
   mov rsp, rbp;                    
@@ -18,47 +18,52 @@ main:
 
 encrypt_file:
   xor rax, rax;
-  mov rsi, rbp;
-  mov rdx, 1024;
+  mov edi, dword [rbp-992];
+  lea rsi, [rbp-512];
+  mov rdx, 256;
   syscall;
-  mov byte [rbp+rax], 0;
 
-  mov rax, 1;
-  mov rdi, 1;
-  mov rsi, rbp;
-  syscall;
+  mov qword [rbp-520], rax;
+  mov byte [rbp-512+rax], 0; 
+
+  xor rbx, rbx;
+  loop_1:
+    mov rax, qword [rbp-1024+rbx]
+
+  jne loop_1;
+
   ret;
 
-generate_random_numbers:
+generate_pseudorandom_numbers:
   xor rbx, rbx;
-  loop_start:
+  loop_2:
     rdtsc;
     mul rdx;
-    mov rdx, rbp;
+    mov qword [rbp-1024+rbx], rax;     
     add rbx, 8;
-    sub rdx, rbx;
-    mov [rdx], rax;
     cmp rbx, 32;
-  jl loop_start;
+  jl loop_2;
   ret; 
 
-open_file:
+open_user_file_input:
   mov rax, 2;
   lea rdi, [rbp-1056];
   mov rsi, 0;
   mov rdx, 0;
   syscall;
+
   test rax, rax;
   js error_exit;
-  mov rdi, rax;
+  mov dword [rbp-992], eax;
   ret;
 
-read_input_file:
+read_user_file_input:
   mov rax, 0;
   mov rdi, 0;
   lea rsi, [rbp-1056];
   mov rdx, 32;
   syscall;
+
   dec rax;
   mov byte [rbp-1056+rax], 0;
   ret;
@@ -72,3 +77,12 @@ error_exit:
   mov rax, 60;   
   mov rdi, 1;   
   syscall;
+
+
+;; Variables location in stack
+;; [rbp-1056] + 31bytes for filename and 1byte for null-byte
+;; [rbp-1024] + 32bytes pseudo-random numbers generated with rdtsc 8bytes each
+;; [rbp-992] file_discriptor var
+;; [rbp-520] filesize in bytes
+;; [rbp-512] file data MAXSIZE=256bytes
+;; [rbp-256] encrypted file data output MAXSIZE=256bytes 
